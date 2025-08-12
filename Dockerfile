@@ -33,5 +33,5 @@ COPY --from=builder /app /app
 # Reste en root pour éviter soucis de droits sur datasets TrueNAS
 RUN chmod +x /app/start.sh
 
-EXPOSE 3099
+EXPOSE 3000
 CMD ["sh", "./start.sh"]
