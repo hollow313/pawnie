@@ -12,12 +12,7 @@ services:
       JWT_SECRET: "${JWT_SECRET:-change-me}"
       DATABASE_URL: "${DATABASE_URL:-file:./data/pawnie.db}"
       UPLOAD_DIR: "${UPLOAD_DIR:-./data/uploads}"
-      NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3000}"
+      NEXT_PUBLIC_APP_URL: "${NEXT_PUBLIC_APP_URL:-http://localhost:3099}"
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3099"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
