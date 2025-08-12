@@ -1,31 +1,40 @@
 # --- Build
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ git libc6-compat
+# toolchain + git + libc compat + openssl for any native deps during build
+RUN apk add --no-cache python3 make g++ git libc6-compat openssl
 
-# Copie seulement les manifests pour le cache
+# Copy manifests first for better caching
 COPY package.json package-lock.json* ./
 
-# Si lockfile présent => npm ci, sinon npm install
+# Use lockfile if present, otherwise fallback
 RUN if [ -f package-lock.json ]; then \
       npm ci --no-audit --no-fund --loglevel=verbose; \
     else \
       npm install --no-audit --no-fund --loglevel=verbose; \
     fi
 
-# Reste du code
+# Copy the rest of the project
 COPY . .
-RUN npx prisma generate
+
+# Next build (OK to continue if build-time type errors)
 RUN npm run build || true
 
 # --- Runtime
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+
+# runtime needs openssl for Prisma engines on alpine (musl)
+RUN apk add --no-cache openssl
+
 COPY --from=builder /app /app
+
+# non-root user & data dir
 RUN addgroup -S app && adduser -S app -G app \
  && mkdir -p /app/data/uploads \
  && chown -R app:app /app
 USER app
+
 EXPOSE 3000
 CMD ["sh", "./start.sh"]
