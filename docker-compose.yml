@@ -5,7 +5,7 @@ services:
     image: holloow313/pawnie:latest
     container_name: pawnie
     ports:
-      - "3000:3000"
+      - "3099:3099"
     env_file:
       - .env
     environment:
@@ -17,7 +17,7 @@ services:
       - ./data:/app/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3099"]
       interval: 20s
       timeout: 5s
       retries: 5
