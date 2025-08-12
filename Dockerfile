@@ -36,5 +36,5 @@ RUN addgroup -S app && adduser -S app -G app \
  && chown -R app:app /app
 USER app
 
-EXPOSE 3000
+EXPOSE 3099
 CMD ["sh", "./start.sh"]
