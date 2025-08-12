@@ -1,11 +1,18 @@
 #!/usr/bin/env sh
 set -e
+
+# Prepare runtime folders & symlink for uploads
 mkdir -p ./data/uploads
-# create public/uploads symlink if not present
 if [ ! -e ./public/uploads ]; then ln -s ../data/uploads ./public/uploads; fi
-# apply schema (SQLite) and generate client
-npx prisma db push
-# seed (non-blocking if already seeded)
+
+# Generate Prisma client (runtime, avoids buildx musl engine issues)
+npx prisma generate --schema=./prisma/schema.prisma
+
+# Apply schema (SQLite) and generate tables
+npx prisma db push --schema=./prisma/schema.prisma
+
+# Seed (continue even if it fails because already seeded)
 node prisma/seed.cjs || true
-# run custom server (Next + Socket.IO)
+
+# Run custom server (Next + Socket.IO)
 node server.cjs
