@@ -30,8 +30,7 @@ RUN apk add --no-cache openssl curl bash
 
 COPY --from=builder /app /app
 
-# On reste en root pour éviter les soucis droits sur datasets TrueNAS
-# Assure que start.sh est exécutable
+# Reste en root pour éviter soucis de droits sur datasets TrueNAS
 RUN chmod +x /app/start.sh
 
 EXPOSE 3099
