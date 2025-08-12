@@ -18,3 +18,4 @@ RUN mkdir -p /app/data/uploads && chown -R app:app /app
 USER app
 EXPOSE 3000
 CMD ["sh", "./start.sh"]
+
