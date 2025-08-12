@@ -133,3 +133,100 @@ model PetAlert {
   creatorId   String
   creator     User     @relation(fields: [creatorId], references: [id])
   type        AlertType
+  title       String
+  description String?
+  city        String?
+  geoLat      Float?
+  geoLng      Float?
+  status      AlertStatus @default(OPEN)
+  petDesc     String?
+  photos      Photo[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum AlertType {
+  LOST
+  FOUND
+  SIGHTING
+}
+
+enum AlertStatus {
+  OPEN
+  RESOLVED
+  ARCHIVED
+}
+
+model Listing {
+  id             String   @id @default(cuid())
+  sellerId       String
+  seller         User     @relation(fields: [sellerId], references: [id])
+  title          String
+  description    String?
+  price          Int
+  species        Species?
+  breed          String?
+  city           String?
+  geoLat         Float?
+  geoLng         Float?
+  isProfessional Boolean  @default(false)
+  status         ListingStatus @default(ACTIVE)
+  photos         Photo[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+enum ListingStatus {
+  ACTIVE
+  PAUSED
+  SOLD
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  createdAt  DateTime @default(now())
+  readAt     DateTime?
+  sender     User     @relation("messagesSent", fields: [senderId], references: [id])
+  receiver   User     @relation("messagesRecv", fields: [receiverId], references: [id])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  type      FavType
+  refId     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  @@unique([userId, type, refId])
+}
+
+enum FavType {
+  PET
+  LISTING
+  MATING
+  ALERT
+  USER
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetType ReportTarget
+  targetId   String
+  reason     String
+  createdAt  DateTime @default(now())
+  reporter   User     @relation("reportsByUser", fields: [reporterId], references: [id])
+}
+
+enum ReportTarget {
+  USER
+  PET
+  LISTING
+  MATING
+  ALERT
+  MESSAGE
+  PHOTO
+}
