@@ -88,4 +88,86 @@ export default function Admin() {
               <label className="flex items-center gap-2"><input type="checkbox" checked={banner.enabled} onChange={e=>setBanner({...banner, enabled:e.target.checked})}/> Activer</label>
               <button className="px-4 py-2 rounded-lg bg-paw-600 text-white">Enregistrer</button>
             </form>
-          </
+          </section>
+        )}
+
+        {tab==="moderation" && (
+          <section className="bg-white border rounded-xl p-4">
+            <h2 className="text-xl font-semibold mb-3">Modération annonces</h2>
+            <div className="flex gap-2">
+              <input className="border rounded-lg p-2" placeholder="ID annonce" value={listingId} onChange={e=>setListingId(e.target.value)} />
+              <button onClick={toggleListing} className="px-4 py-2 rounded-lg border">Basculer actif/inactif</button>
+            </div>
+          </section>
+        )}
+
+        {tab==="settings" && (
+          <section className="bg-white border rounded-xl p-4">
+            <h2 className="text-xl font-semibold mb-3">Paramètres du site</h2>
+            <form onSubmit={saveSettings} className="grid md:grid-cols-3 gap-3">
+              <div className="md:col-span-3">
+                <label className="text-sm text-slate-600">Titre du site</label>
+                <input className="w-full border rounded-lg p-2" value={settings.site_title||""} onChange={e=>setSettings({...settings, site_title:e.target.value})}/>
+              </div>
+              <div>
+                <label className="text-sm text-slate-600">Taille max upload (Mo)</label>
+                <input className="w-full border rounded-lg p-2" value={settings.upload_max_mb||""} onChange={e=>setSettings({...settings, upload_max_mb:e.target.value})}/>
+              </div>
+              <div>
+                <label className="text-sm text-slate-600">Taille page par défaut</label>
+                <input className="w-full border rounded-lg p-2" value={settings.default_page_size||""} onChange={e=>setSettings({...settings, default_page_size:e.target.value})}/>
+              </div>
+              <div className="md:col-span-3"><button className="px-4 py-2 rounded-lg bg-paw-600 text-white">Enregistrer</button></div>
+            </form>
+            <p className="text-xs text-slate-500 mt-2">
+              Note : la taille d’upload est aussi limitée par Nginx (actuellement 20 Mo dans la conf).
+            </p>
+          </section>
+        )}
+
+        {tab==="users" && (
+          <section className="bg-white border rounded-xl p-4">
+            <h2 className="text-xl font-semibold mb-3">Utilisateurs</h2>
+            <div className="flex gap-2 mb-3">
+              <input className="border rounded-lg p-2" placeholder="Recherche nom/email" value={q} onChange={e=>setQ(e.target.value)} />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b">
+                    <th className="py-2 pr-3">ID</th>
+                    <th className="py-2 pr-3">Nom</th>
+                    <th className="py-2 pr-3">Email</th>
+                    <th className="py-2 pr-3">Actif</th>
+                    <th className="py-2 pr-3">Admin</th>
+                    <th className="py-2 pr-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(u=>(
+                    <tr key={u.id} className="border-b">
+                      <td className="py-2 pr-3">{u.id}</td>
+                      <td className="py-2 pr-3">
+                        <input className="border rounded p-1" value={u.full_name||""} onChange={e=>setUsers(prev=>prev.map(x=>x.id===u.id?{...x, full_name:e.target.value}:x))}/>
+                      </td>
+                      <td className="py-2 pr-3">{u.email}</td>
+                      <td className="py-2 pr-3">
+                        <input type="checkbox" checked={u.is_active} onChange={e=>updateUser(u, { is_active: e.target.checked })}/>
+                      </td>
+                      <td className="py-2 pr-3">
+                        <input type="checkbox" checked={u.is_admin} onChange={e=>updateUser(u, { is_admin: e.target.checked })}/>
+                      </td>
+                      <td className="py-2 pr-3">
+                        <button className="px-2 py-1 border rounded" onClick={()=>updateUser(u, { full_name: u.full_name||"" })}>Enregistrer</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
