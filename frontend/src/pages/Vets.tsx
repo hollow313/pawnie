@@ -1,58 +1,80 @@
-import React, { useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import React, { useEffect, useMemo, useState } from "react";
+import VetMap from "../components/VetMap";
+import SearchBar from "../components/SearchBar";
+import { fetchVets, Vet, GeocodeResult } from "../services/api";
 
-// Fix des icônes par défaut (chemins packagés par Vite)
-import markerIcon2xUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIconUrl from 'leaflet/dist/images/marker-icon.png';
-import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png';
+const DEFAULT_CENTER: [number, number] = [43.6045, 1.444]; // Toulouse
 
-// Applique les URLs aux icônes Leaflet
-const DefaultIcon = L.icon({
-  iconUrl: markerIconUrl,
-  iconRetinaUrl: markerIcon2xUrl,
-  shadowUrl: markerShadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41]
-});
-L.Marker.prototype.options.icon = DefaultIcon;
+const VetsPage: React.FC = () => {
+  const [vets, setVets] = useState<Vet[]>([]);
+  const [flyTo, setFlyTo] = useState<[number, number] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
-const Vets: React.FC = () => {
-  // Centre par défaut (ex: Toulouse)
-  const center = useMemo<[number, number]>(() => [43.6045, 1.444], []);
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await fetchVets();
+        setVets(data);
+      } catch (e) {
+        setErr("Impossible de charger les vétérinaires");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-  // TODO: branche sur ton backend pour lister les vétos
-  const vets = [
-    { id: 'v1', name: 'Clinique Vétérinaire Wilson', lat: 43.606, lng: 1.447 },
-    { id: 'v2', name: 'Cabinet Vet Patte Blanche', lat: 43.598, lng: 1.43 }
-  ];
+  const resultsCount = useMemo(() => vets.length, [vets]);
 
   return (
-    <div className="w-full h-[calc(100vh-80px)]">
-      <MapContainer
-        center={center}
-        zoom={13}
-        scrollWheelZoom
-        style={{ width: '100%', height: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {vets.map(v => (
-          <Marker key={v.id} position={[v.lat, v.lng]}>
-            <Popup>
-              <div className="font-semibold">{v.name}</div>
-              <div className="text-xs text-gray-500">({v.lat.toFixed(4)}, {v.lng.toFixed(4)})</div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+    <div className="mx-auto grid w-full max-w-7xl grid-rows-[auto,1fr] gap-4 p-4 sm:p-6">
+      {/* Header/Search */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-semibold">Vétérinaires proches</h1>
+        <div className="sm:ml-auto w-full sm:w-96">
+          <SearchBar
+            onSelect={(g: GeocodeResult) => setFlyTo([g.lat, g.lng])}
+            placeholder="📍 Chercher une ville, une adresse…"
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
+        {/* Map (responsive: 60vh on mobile) */}
+        <div className="h-[60vh] min-h-[360px] w-full lg:h-[calc(100vh-160px)]">
+          <VetMap vets={vets} center={DEFAULT_CENTER} flyTo={flyTo} />
+        </div>
+
+        {/* Side panel list */}
+        <aside className="h-[60vh] min-h-[360px] overflow-auto rounded-2xl border border-gray-200 bg-white p-3 lg:h-[calc(100vh-160px)]">
+          <div className="mb-3 text-sm text-gray-500">{resultsCount} résultat(s)</div>
+          {loading && <div className="text-sm">Chargement…</div>}
+          {err && <div className="text-sm text-red-600">{err}</div>}
+          {!loading && !err && vets.map((v) => (
+            <article key={v.id} className="mb-3 rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow">
+              <div className="font-medium">{v.name}</div>
+              {v.address && <div className="text-xs text-gray-500">{v.address}</div>}
+              {v.phone && (
+                <a className="mt-1 inline-block text-sm text-pawnie-700 underline" href={`tel:${v.phone}`}>
+                  {v.phone}
+                </a>
+              )}
+              <div className="mt-2">
+                <button
+                  className="rounded-lg bg-pawnie-600 px-3 py-2 text-sm text-white hover:bg-pawnie-700"
+                  onClick={() => setFlyTo([v.lat, v.lng])}
+                >
+                  Voir sur la carte
+                </button>
+              </div>
+            </article>
+          ))}
+        </aside>
+      </div>
     </div>
   );
 };
 
-export default Vets;
+export default VetsPage;
