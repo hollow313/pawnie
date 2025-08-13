@@ -1,17 +1,33 @@
-import os
+import os, sqlite3
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
+from .models import Base
 
-DATABASE_URL = os.getenv("POSTGRES_URL", "sqlite:///./pawnie.db")
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+DB_PATH = os.getenv("DB_PATH", "/app/data/pawnie.db")
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-Base = declarative_base()
+connect_args = {"check_same_thread": False}
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+    # migrations légères pour SQLite : ajouter colonnes si manquent
+    with sqlite3.connect(DB_PATH) as c:
+        def ensure(table, column, type_sql, default=None):
+            cur = c.execute(f"PRAGMA table_info({table})")
+            cols = [r[1] for r in cur.fetchall()]
+            if column not in cols:
+                c.execute(f"ALTER TABLE {table} ADD COLUMN {column} {type_sql}")
+                if default is not None:
+                    c.execute(f"UPDATE {table} SET {column} = ?", (default,))
+        ensure("users", "address", "TEXT", "")
+        ensure("users", "city", "TEXT", "")
+        ensure("users", "phone", "TEXT", "")
+        ensure("listings", "price", "REAL", 0.0)
 
 def get_db():
+    from fastapi import Depends
     db = SessionLocal()
     try:
         yield db
