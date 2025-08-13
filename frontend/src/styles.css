@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.paw-bg {
+  background-image:
+    radial-gradient(circle at 10px 10px, rgba(79,140,140,0.08) 4px, transparent 5px),
+    radial-gradient(circle at 28px 10px, rgba(79,140,140,0.08) 4px, transparent 5px),
+    radial-gradient(circle at 19px 22px, rgba(79,140,140,0.08) 6px, transparent 7px);
+  background-size: 36px 36px;
+}
