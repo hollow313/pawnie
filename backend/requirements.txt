@@ -2,6 +2,7 @@ fastapi==0.112.0
 uvicorn[standard]==0.30.5
 python-multipart==0.0.9
 pydantic==2.8.2
+email-validator==2.1.0.post1
 SQLAlchemy==2.0.32
 passlib[bcrypt]==1.7.4
 python-jose==3.3.0
