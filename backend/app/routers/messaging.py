@@ -1,43 +1,43 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
-from ..deps import get_current_user
 from ..database import get_db
-from .. import models, schemas
-from ..crud import get_or_create_thread
+from ..deps import get_current_user
+from .. import models
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
-@router.post("/start", response_model=schemas.ThreadOut)
-def start_thread(listing_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+@router.get("/threads")
+def my_threads(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    rows = db.query(models.MessageThread)\
+        .filter((models.MessageThread.buyer_id==user.id) | (models.MessageThread.seller_id==user.id))\
+        .order_by(models.MessageThread.created_at.desc()).all()
+    return [{"id": r.id, "listing_id": r.listing_id, "buyer_id": r.buyer_id, "seller_id": r.seller_id} for r in rows]
+
+@router.post("/start")
+def start_thread(
+    listing_id: int = Query(...),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
     listing = db.query(models.Listing).filter_by(id=listing_id).first()
     if not listing or not listing.is_active:
-        raise HTTPException(status_code=404, detail="Annonce introuvable")
+        raise HTTPException(status_code=400, detail="Annonce indisponible")
     if listing.owner_id == user.id:
-        raise HTTPException(status_code=400, detail="Impossible avec votre propre annonce")
-    t = get_or_create_thread(db, listing_id=listing.id, buyer_id=user.id, seller_id=listing.owner_id)
-    return t
+        raise HTTPException(status_code=400, detail="Impossible de contacter votre propre annonce")
+    # thread existant ?
+    thr = db.query(models.MessageThread).filter_by(
+        listing_id=listing.id, buyer_id=user.id, seller_id=listing.owner_id
+    ).first()
+    if not thr:
+        thr = models.MessageThread(listing_id=listing.id, buyer_id=user.id, seller_id=listing.owner_id)
+        db.add(thr); db.commit(); db.refresh(thr)
+    return {"id": thr.id}
 
-@router.get("/threads", response_model=List[schemas.ThreadOut])
-def my_threads(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return (db.query(models.Thread)
-              .filter((models.Thread.buyer_id == user.id) | (models.Thread.seller_id == user.id))
-              .order_by(models.Thread.created_at.desc()).all())
-
-@router.get("/thread/{thread_id}", response_model=List[schemas.MessageOut])
-def list_messages(thread_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    t = db.query(models.Thread).filter_by(id=thread_id).first()
-    if not t or (user.id not in [t.buyer_id, t.seller_id]):
+@router.post("/{thread_id}/send")
+def send_message(thread_id: int, body: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    thr = db.query(models.MessageThread).filter_by(id=thread_id).first()
+    if not thr or (user.id not in (thr.buyer_id, thr.seller_id)):
         raise HTTPException(status_code=404, detail="Thread introuvable")
-    msgs = (db.query(models.Message)
-              .filter_by(thread_id=thread_id)
-              .order_by(models.Message.created_at.asc()).all())
-    return msgs
-
-@router.post("/send", response_model=schemas.MessageOut)
-def send_message(payload: schemas.MessageCreate, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    t = db.query(models.Thread).filter_by(id=payload.thread_id).first()
-    if not t or (user.id not in [t.buyer_id, t.seller_id]):
-        raise HTTPException(status_code=404, detail="Thread introuvable")
-    m = models.Message(thread_id=t.id, sender_id=user.id, body=payload.body)
-    db.add(m); db.commit(); db.refresh(m); return m
+    msg = models.Message(thread_id=thread_id, sender_id=user.id, body=body)
+    db.add(msg); db.commit()
+    return {"ok": True}
