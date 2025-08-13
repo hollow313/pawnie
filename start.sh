@@ -1,16 +1,14 @@
 #!/usr/bin/env sh
 set -e
 
-# Prépare les dossiers applicatifs
+# Dossiers applicatifs persistants
 mkdir -p /app/uploads /app/data
 
-# Prépare les dossiers Nginx (temp/cache/run) + droits pour l’utilisateur www-data
-mkdir -p /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi \
-         /var/cache/nginx /run/nginx
-chown -R www-data:www-data /var/lib/nginx /var/cache/nginx /run/nginx
+# Dossiers temporaires Nginx dans /app (compatibles non-root & TrueNAS)
+mkdir -p /app/nginx-tmp/body /app/nginx-tmp/proxy /app/nginx-tmp/fastcgi /app/nginx-tmp/uwsgi /app/nginx-tmp/scgi
 
-# Démarre le backend (FastAPI)
+# Lancer le backend (FastAPI)
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 &
 
-# Démarre Nginx en avant-plan
+# Lancer Nginx en avant-plan (pas besoin de créer /var/run/*)
 nginx -g 'daemon off;'
