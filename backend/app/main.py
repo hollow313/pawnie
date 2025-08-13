@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from .database import init_db
 from .routers import auth as r_auth, users as r_users, animals as r_animals, listings as r_listings, favorites as r_favs, uploads as r_uploads, messaging as r_msg, admin as r_admin
 from .routers.vets import router as r_vets
+from .routers.vets import router as r_vets
+# ...
+app.include_router(r_vets, prefix="/api")
+
 
 app = FastAPI(title="Pawnie API")
 
