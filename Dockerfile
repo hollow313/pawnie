@@ -1,8 +1,14 @@
 # --- Frontend build ---
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci
+
+# Copie les manifests (le wildcard prend package.json et éventuellement package-lock.json)
+COPY frontend/package*.json ./
+
+# Utilise npm install (pas npm ci) pour ne pas exiger un lock présent dans le contexte
+RUN npm install --no-audit --no-fund
+
+# Copie le reste du front et build
 COPY frontend ./
 RUN npm run build
 
@@ -12,7 +18,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # OS deps
-RUN apt-get update && apt-get install -y --no-install-recommends nginx &&     rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends nginx && \
+    rm -rf /var/lib/apt/lists/*
 
 # Python deps
 COPY backend/requirements.txt ./backend/requirements.txt
@@ -24,10 +31,10 @@ COPY nginx.conf /etc/nginx/nginx.conf
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Frontend build
+# Frontend build → image finale
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
-# Runtime dirs
+# Dossiers runtime
 RUN mkdir -p /app/uploads /app/data
 
 EXPOSE 3099
