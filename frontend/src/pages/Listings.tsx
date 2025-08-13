@@ -64,9 +64,16 @@ export default function Listings() {
           </div>
         </form>
         <div className="grid md:grid-cols-3 gap-4">
-          {items.map(it => (
-            <ListingCard key={it.id} item={it} onFav={toggleFav} isFav={favs.includes(it.id)} onMessage={contact} />
-          ))}
+         {items.map(it => (
+            <ListingCard
+              key={it.id}
+              item={it}
+              onFav={toggleFav}
+              isFav={favs.includes(it.id)}
+              onMessage={contact}
+              isOwner={it.owner_id === JSON.parse(atob((localStorage.getItem("token")||".").split(".")[1]||"e30="))?.sub}
+            />
+        ))}
         </div>
       </main>
     </div>
