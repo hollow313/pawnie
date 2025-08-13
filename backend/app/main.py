@@ -21,6 +21,20 @@ app.include_router(r_msg.router, prefix="/api")
 app.include_router(r_admin.router, prefix="/api")
 app.include_router(r_vets, prefix="/api")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+api = FastAPI()
+api.include_router(vets.router, prefix="")
+api.include_router(geocode.router, prefix="")
+
+app.mount("/api/v1", api)
+
 @app.get("/api/health")
 def health():
     return {"status":"ok"}
