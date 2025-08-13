@@ -23,6 +23,7 @@ export default function Header() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="text-paw-700"><PawLogo /></Link>
           <nav className="flex items-center gap-4">
+            <Link to="/" className="hover:underline">Accueil</Link>
             <Link to="/listings" className="hover:underline">Annonces</Link>
             <Link to="/animals" className="hover:underline">Mes animaux</Link>
             <Link to="/messages" className="hover:underline">Messages</Link>
