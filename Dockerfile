@@ -2,10 +2,10 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
 
-# Copie les manifests (le wildcard prend package.json et éventuellement package-lock.json)
+# Copie les manifests (prend package.json et package-lock.json s'il existe)
 COPY frontend/package*.json ./
 
-# Utilise npm install (pas npm ci) pour ne pas exiger un lock présent dans le contexte
+# Installation souple (pas de lock requis)
 RUN npm install --no-audit --no-fund
 
 # Copie le reste du front et build
