@@ -1,14 +1,8 @@
 # --- Frontend build ---
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
-
-# Copie les manifests (prend package.json et package-lock.json s'il existe)
 COPY frontend/package*.json ./
-
-# Installation souple (pas de lock requis)
 RUN npm install --no-audit --no-fund
-
-# Copie le reste du front et build
 COPY frontend ./
 RUN npm run build
 
@@ -34,8 +28,8 @@ RUN chmod +x /app/start.sh
 # Frontend build → image finale
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
-# Dossiers runtime
-RUN mkdir -p /app/uploads /app/data
+# Crée /app (et sous-dossiers) avec des permissions larges pour UID arbitraire (TrueNAS)
+RUN mkdir -p /app/uploads /app/data && chmod -R 0777 /app
 
 EXPOSE 3099
 CMD ["/app/start.sh"]
